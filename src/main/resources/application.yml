@@ -1,0 +1,74 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ecommerce-order-system
+
+  # ---------- MySQL / JPA ----------
+  datasource:
+    url: jdbc:mysql://localhost:3306/orderdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: orderuser
+    password: orderpass
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      # dev convenience: let Hibernate create/update the users, orders, outbox tables.
+      # In real prod this would be Flyway/Liquibase, not ddl-auto.
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+    show-sql: false
+    open-in-view: false
+
+  # ---------- Kafka ----------
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+    consumer:
+      group-id: order-status-consumer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    listener:
+      ack-mode: manual
+
+  # ---------- Cassandra ----------
+  cassandra:
+    keyspace-name: orderks
+    contact-points: localhost
+    port: 9042
+    local-datacenter: datacenter1
+    # We create the schema via db/cassandra-init.cql, not Spring.
+    schema-action: none
+    request:
+      timeout: 10s
+    connection:
+      init-query-timeout: 10s
+
+# ---------- App-specific ----------
+app:
+  jwt:
+    # 256-bit secret for HS256. In real life this comes from a secret manager / env var,
+    # never committed. Here it is in config for a runnable demo.
+    secret: "ZmFrZS1kZW1vLXNlY3JldC1jaGFuZ2UtbWUtMzJieXRlcy1taW4hISE="
+    # token lifetime in milliseconds (1 hour)
+    expiration-ms: 3600000
+  outbox:
+    # how often the poller scans for PENDING outbox rows (milliseconds)
+    poll-interval-ms: 2000
+    batch-size: 50
+
+logging:
+  level:
+    com.example.order: INFO
+    org.springframework.kafka: WARN
+    com.datastax.oss.driver: WARN
