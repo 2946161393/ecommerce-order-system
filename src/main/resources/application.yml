@@ -8,8 +8,10 @@ spring:
   # ---------- MySQL / JPA ----------
   datasource:
     url: jdbc:mysql://localhost:3306/orderdb?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: orderuser
-    password: orderpass
+    # Credentials come from environment variables in real deployments;
+    # the defaults after the colon keep local dev runnable with zero setup.
+    username: "${DB_USERNAME:orderuser}"
+    password: "${DB_PASSWORD:orderpass}"
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
@@ -57,9 +59,9 @@ spring:
 # ---------- App-specific ----------
 app:
   jwt:
-    # 256-bit secret for HS256. In real life this comes from a secret manager / env var,
-    # never committed. Here it is in config for a runnable demo.
-    secret: "ZmFrZS1kZW1vLXNlY3JldC1jaGFuZ2UtbWUtMzJieXRlcy1taW4hISE="
+    # 256-bit secret for HS256. Injected via environment variable in real
+    # deployments (never committed); the default keeps the local demo runnable.
+    secret: "${JWT_SECRET:ZmFrZS1kZW1vLXNlY3JldC1jaGFuZ2UtbWUtMzJieXRlcy1taW4hISE=}"
     # token lifetime in milliseconds (1 hour)
     expiration-ms: 3600000
   outbox:
